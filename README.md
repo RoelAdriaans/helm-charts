@@ -59,3 +59,20 @@ for configuration options.
 **WARNING**: The instance deployed with the command above is **not** exposed to the internet and is only accessible from
 within the cluster. To expose your Bugsink instance, you can choose one of several options—such as an Ingress, a
 LoadBalancer service, or a NodePort service—and specify it in your `values.yaml` file.
+
+## Upgrading
+
+### Upgrading to 0.2.0
+
+Version `0.2.0` of the `bugsink` chart replaces the (now unmaintained) Bitnami `postgresql` subchart dependency with
+the [HelmForge `postgresql`](https://helmforge.dev/docs/charts/postgresql) chart. **This is a breaking change and
+there is no automatic upgrade path**: the new subchart uses different resource names and a different database
+Secret, so it cannot take over an existing Bitnami-backed database in place.
+
+If you are running the bundled PostgreSQL database (`postgresql.enabled: true`), before upgrading you must:
+
+1. Back up your existing database (e.g. `pg_dump`).
+2. Upgrade the chart, which deploys a fresh, empty PostgreSQL instance.
+3. Restore your backup into the new database.
+
+If you use `externalDatabase` instead of the bundled PostgreSQL chart, this change does not affect you.
