@@ -16,8 +16,8 @@ keywords:
   - docker
 dependencies:
   - name: postgresql
-    repository: https://charts.bitnami.com/bitnami
-    version: 16.6.7
+    repository: https://repo.helmforge.dev
+    version: 2.0.4
     condition: postgresql.enabled
 maintainers:
   - name: Amin Vassefpoor

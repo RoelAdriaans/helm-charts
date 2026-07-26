@@ -19,6 +19,20 @@
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{/*
+Mirrors the "postgresql.fullname" naming logic of the bundled HelmForge postgresql
+subchart (always "<release-name>-<name>", unless overridden), so the parent chart
+can reference the subchart's Service/Secret names without depending on its internals.
+*/}}
+{{- define "bugsink.postgresql.fullname" -}}
+  {{- if .Values.postgresql.fullnameOverride }}
+    {{- .Values.postgresql.fullnameOverride | trunc 63 | trimSuffix "-" }}
+  {{- else }}
+    {{- $name := default "postgresql" .Values.postgresql.nameOverride }}
+    {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+  {{- end }}
+{{- end }}
+
 {{- define "bugsink.labels" -}}
 helm.sh/chart: {{ include "bugsink.chart" . }}
 {{ include "bugsink.selectorLabels" . }}
@@ -83,11 +97,13 @@ env:
         key: {{ .Values.externalDatabase.existingSecretKey }}
   {{- end }}
   {{- if .Values.postgresql.enabled }}
-  - name: DATABASE_URL
+  - name: DB_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: {{ printf "%s-postgresql-svcbind-custom-user" (include "bugsink.fullname" .) }}
-        key: uri
+        name: {{ printf "%s-auth" (include "bugsink.postgresql.fullname" .) }}
+        key: user-password
+  - name: DATABASE_URL
+    value: {{ printf "%s%s:%s%s%s:%v/%s" "postgresql://" .Values.postgresql.auth.username "$(DB_PASSWORD)" "@" (include "bugsink.postgresql.fullname" .) (.Values.postgresql.service.port | default 5432) .Values.postgresql.auth.database | quote }}
   {{- end }}
 envFrom:
   - configMapRef:
